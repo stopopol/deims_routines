@@ -1,0 +1,36 @@
+<?php
+
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\node\Entity\Node;
+use Drupal\Core\Plugin\DefaultPluginManager;
+
+# this module uses the entity_presave() hook to run whenever a location or site is created or updated:
+# https://api.drupal.org/api/drupal/core%21lib%21Drupal%21Core%21Entity%21entity.api.php/function/hook_entity_presave/10
+
+/**
+ * Implements hook_entity_presave()
+ */
+ 
+function deims_routines_entity_presave(Drupal\Core\Entity\EntityInterface $entity) {
+	
+	// only called when nodes are saved
+	if ($entity->getEntityTypeId() == 'node') {
+		
+		$allowed_content_types = array("site", "dataset", "activity", "observation_location", "sensor");
+
+		if (in_array($entity->getType(), $allowed_content_types)) {
+
+			if ($entity->getType() == "site") {
+				if (empty($entity->get('field_deims_id'))) {
+					$entity->field_deims_id->value = $entity->get('uuid');
+				}
+			}
+			else {
+				if (empty($entity->get('field_uuid'))) {
+					$entity->field_uuid->value = $entity->get('uuid');
+				} 
+			}
+			
+		}
+	}
+}
