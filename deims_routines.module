@@ -12,7 +12,8 @@ use Drupal\Core\Plugin\DefaultPluginManager;
  */
  
 function deims_routines_entity_presave(Drupal\Core\Entity\EntityInterface $entity) {
-	
+
+	// save DEIMS.IDs and UUIDs from Drupal internal fields to materialised fields
 	// only called when nodes are saved
 	if ($entity->getEntityTypeId() == 'node') {
 		
