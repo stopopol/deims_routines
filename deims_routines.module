@@ -13,10 +13,11 @@ use Drupal\Core\Plugin\DefaultPluginManager;
  
 function deims_routines_entity_presave(Drupal\Core\Entity\EntityInterface $entity) {
 
-	// save DEIMS.IDs and UUIDs from Drupal internal fields to materialised fields
+	
 	// only called when nodes are saved
 	if ($entity->getEntityTypeId() == 'node') {
-		
+
+		// save DEIMS.IDs and UUIDs from Drupal internal fields to materialised fields
 		$allowed_content_types = array("site", "dataset", "activity", "observation_location", "sensor");
 
 		if (in_array($entity->getType(), $allowed_content_types)) {
@@ -33,5 +34,8 @@ function deims_routines_entity_presave(Drupal\Core\Entity\EntityInterface $entit
 			}
 			
 		}
+
+		// To Do: remove all network affiliations if a site is closed
+
 	}
 }
