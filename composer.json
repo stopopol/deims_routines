@@ -1,6 +1,6 @@
 {
     "name": "stopopol/deims_routines",
     "description": "provides standard routines for DEIMS",
-    "type": "drupal-custom-module",
+    "type": "drupal-module",
     "homepage": "https://github.com/stopopol/deims_routines"
 }
