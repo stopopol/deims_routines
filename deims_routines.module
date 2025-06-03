@@ -43,5 +43,7 @@ function deims_routines_entity_presave(Drupal\Core\Entity\EntityInterface $entit
 			}
 		}
 
+		// To Do? Automatically remove unverified GERI, LTER Europe and ILTER affiliation?
+
 	}
 }
