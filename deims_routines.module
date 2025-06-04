@@ -1,9 +1,7 @@
 <?php
 
 use Drupal\Core\Entity\EntityInterface;
-use Drupal\node\Entity\Node;
-use Drupal\Core\Plugin\DefaultPluginManager;
-use Drupal\taxonomy\Entity\Term;
+use Drupal\paragraphs\Entity\Paragraph;
 
 # this module uses the entity_presave() hook to run whenever a location, site, activity or sensor is created or updated:
 # https://api.drupal.org/api/drupal/core%21lib%21Drupal%21Core%21Entity%21entity.api.php/function/hook_entity_presave/10
@@ -17,33 +15,83 @@ function deims_routines_entity_presave(Drupal\Core\Entity\EntityInterface $entit
 	// only called when nodes are saved
 	if ($entity->getEntityTypeId() == 'node') {
 
-		$allowed_content_types = array("site", "dataset", "activity", "observation_location", "sensor");
-		$current_content_type = $entity->getType();
+		$allowed_content_types = array("dataset", "activity", "observation_location", "sensor");
+		$current_content_type = $entity->bundle();
 		
-		// save DEIMS.IDs and UUIDs from Drupal internal fields to materialised fields
+		// save UUIDs from Drupal internal fields to materialised field
 		if (in_array($current_content_type, $allowed_content_types)) {
 
-			if ($entity->getType() == "site") {
-				if ($entity->get('field_deims_id')->isEmpty()) {
-					$entity->field_deims_id->value = $entity->get('uuid')->value;
-				}
-			}
-			else {
-				if ($entity->get('field_uuid')->isEmpty()) {
-					$entity->field_uuid->value = $entity->get('uuid')->value;
-				} 
+			if ($entity->get('field_uuid')->isEmpty()) {
+				$entity->field_uuid->value = $entity->uuid();
 			}
 			
 		}
 
-		// If a site is closed, remove all content from the affiliations field
-		if ($current_content_type == 'site' && !$entity->get('field_status')->isEmpty()) {
-			if ($entity->get('field_status')->target_id == 54180) {
-				$entity->set('field_affiliation', []);
+		// routines for sites
+		if ($current_content_type == "site") {
+			// save UUID tp DEIMS.ID field 
+			if ($entity->get('field_deims_id')->isEmpty()) {
+				$entity->field_deims_id->value = $entity->uuid();
 			}
+			
+			// If a site is closed, remove all content from the affiliations field
+			if (!$entity->get('field_status')->isEmpty()) {
+				if ($entity->get('field_status')->target_id == 54180) {
+					$entity->set('field_affiliation', []);
+				}
+			}
+			
+			// Automatically remove unverified GERI (12967), LTER Europe (12974) and ILTER (12833) affiliation
+			// and print status message
+			$field_affiliation = $entity->get('field_affiliation');
+			$paragraphs_to_delete = [];
+			$indexes_to_remove = [];
+
+			foreach ($field_affiliation as $index => $item) {
+				
+				if ($item->entity instanceof Paragraph) {
+					
+					$paragraph = $item->entity;
+					
+					if (!$paragraph->get('field_network')->isEmpty() && !$paragraph->get('field_network_verified')->isEmpty()) {
+						
+						$verified = $paragraph->get('field_network_verified')->value;
+						if (!$verified) {
+						
+							$special_network_ids = array(12974, 12833, 12967);
+							$network_nid = $paragraph->get('field_network')->target_id;
+							
+							if (in_array($network_nid, $special_network_ids)) {
+								// Mark for removal and deletion.
+								$indexes_to_remove[] = $index;
+								$paragraphs_to_delete[] = $paragraph;
+								
+								switch ($network_nid) {
+									case 12967: // GERI
+										\Drupal::messenger()->addMessage('Affiliation with GERI is granted centrally.', 'warning');
+										break;
+									case 12974: // eLTER
+										\Drupal::messenger()->addMessage('Affiliation with eLTER is granted centrally following national-level accreditation.', 'warning');
+										break;
+									case 12833: // ILTER
+										\Drupal::messenger()->addMessage('Affiliation with ILTER is granted centrally and reviewed biannually, contingent on national accreditation and full site profile completion.', 'warning');
+										break;
+								}
+							}
+						}
+					}
+				}
+			}
+			
+			// Remove references and delete paragraphs.
+			foreach (array_reverse($indexes_to_remove) as $i) {
+				$field_affiliation->removeItem($i);
+			}
+
+			foreach ($paragraphs_to_delete as $p) {
+				$p->delete();
+			}
+			
 		}
-
-		// To Do? Automatically remove unverified GERI, LTER Europe and ILTER affiliation?
-
 	}
 }
