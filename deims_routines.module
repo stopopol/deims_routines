@@ -41,7 +41,7 @@ function deims_routines_entity_presave(Drupal\Core\Entity\EntityInterface $entit
 				}
 			}
 			
-			// Automatically remove unverified GERI (12967), LTER Europe (12974) and ILTER (12833) affiliation
+			// Automatically remove unverified GERI (12967), LTER Europe (12974), ILTER (12833), TERN (245), NEON (12966) affiliation
 			// and print status message
 			$field_affiliation = $entity->get('field_affiliation');
 			$paragraphs_to_delete = [];
@@ -58,7 +58,7 @@ function deims_routines_entity_presave(Drupal\Core\Entity\EntityInterface $entit
 						$verified = $paragraph->get('field_network_verified')->value;
 						if (!$verified) {
 						
-							$special_network_ids = array(12974, 12833, 12967);
+							$special_network_ids = array(12974, 12833, 12967, 245, 12966);
 							$network_nid = $paragraph->get('field_network')->target_id;
 							
 							if (in_array($network_nid, $special_network_ids)) {
@@ -75,6 +75,12 @@ function deims_routines_entity_presave(Drupal\Core\Entity\EntityInterface $entit
 										break;
 									case 12833: // ILTER
 										\Drupal::messenger()->addMessage('Affiliation with ILTER is granted centrally and reviewed biannually, contingent on national accreditation and full site profile completion.', 'warning');
+										break;
+									case 245: // TERN
+										\Drupal::messenger()->addMessage('Affiliation with TERN can only be granted centrally by the TERN network management. Please directly get in touch with them regarding your site record on DEIMS.', 'warning');
+										break;
+									case 12966: // NEON
+										\Drupal::messenger()->addMessage('Affiliation with NEON can only be granted centrally by the NEON network management. Please directly get in touch with them regarding your site record on DEIMS.', 'warning');
 										break;
 								}
 							}
