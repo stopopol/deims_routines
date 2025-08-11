@@ -19,12 +19,8 @@ function deims_routines_entity_presave(Drupal\Core\Entity\EntityInterface $entit
 		$current_content_type = $entity->bundle();
 		
 		// save UUIDs from Drupal internal fields to materialised field
-		if (in_array($current_content_type, $allowed_content_types)) {
-
-			if ($entity->get('field_uuid')->isEmpty()) {
-				$entity->field_uuid->value = $entity->uuid();
-			}
-			
+		if (in_array($current_content_type, $allowed_content_types) && $entity->get('field_uuid')->isEmpty()) {
+			$entity->field_uuid->value = $entity->uuid();
 		}
 
 		// routines for sites
@@ -101,3 +97,4 @@ function deims_routines_entity_presave(Drupal\Core\Entity\EntityInterface $entit
 		}
 	}
 }
+
