@@ -15,8 +15,8 @@ function deims_routines_form_user_form_alter(&$form, \Drupal\Core\Form\FormState
     // Make the email field read-only
     $form['account']['mail']['#disabled'] = TRUE;
 
-    // Optional: Add a description to explain why it’s disabled
-    $form['account']['mail']['#description'] = t('You cannot change your email address.');
+    // Description to explain why it’s disabled
+    $form['account']['mail']['#description'] = t('You cannot change your email address. For assistance please use the contact form.');
   }
 }
 
@@ -116,6 +116,7 @@ function deims_routines_entity_presave(Drupal\Core\Entity\EntityInterface $entit
 		}
 	}
 }
+
 
 
 
