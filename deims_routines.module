@@ -3,6 +3,23 @@
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\paragraphs\Entity\Paragraph;
 
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function deims_routines_form_user_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+  // Get the current user
+  $current_user = \Drupal::currentUser();
+
+  // Only allow admins to edit the email field
+  if (!$current_user->hasPermission('administer users')) {
+    // Make the email field read-only
+    $form['account']['mail']['#disabled'] = TRUE;
+
+    // Optional: Add a description to explain why it’s disabled
+    $form['account']['mail']['#description'] = t('You cannot change your email address.');
+  }
+}
+
 # this module uses the entity_presave() hook to run whenever a location, site, activity or sensor is created or updated:
 # https://api.drupal.org/api/drupal/core%21lib%21Drupal%21Core%21Entity%21entity.api.php/function/hook_entity_presave/10
 
@@ -99,5 +116,6 @@ function deims_routines_entity_presave(Drupal\Core\Entity\EntityInterface $entit
 		}
 	}
 }
+
 
 
