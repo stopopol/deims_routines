@@ -2,6 +2,7 @@
 
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\paragraphs\Entity\Paragraph;
+use Drupal\deims_routines\perun;
 
 /**
  * Implements hook_form_FORM_ID_alter().
@@ -44,16 +45,26 @@ function deims_routines_entity_presave(Drupal\Core\Entity\EntityInterface $entit
 
 		// routines for sites
 		if ($current_content_type == "site") {
+			
 			// save UUID tp DEIMS.ID field 
 			if ($entity->get('field_deims_id')->isEmpty()) {
 				$entity->field_deims_id->value = $entity->uuid();
 			}
 			
-			// If a site is closed, remove all content from the affiliations field
+			// if a site is closed, remove all content from the affiliations field
 			if (!$entity->get('field_status')->isEmpty()) {
 				if ($entity->get('field_status')->target_id == 54180) {
 					$entity->set('field_affiliation', []);
 				}
+			}
+			
+			// if the site name changes update the list of site names on PERUN
+			$current_site_name = $entity->get('field_name')->value;
+			$original_node = $entity->original ?? NULL;
+			$old_site_name = $original_node->get('field_name')->value;
+
+			if ($old_site_name !== $current_site_name) {
+				perun::push_site_name_list();
 			}
 			
 			// Automatically remove unverified GERI (12967), LTER Europe (12974), ILTER (12833), TERN (245), NEON (12966) affiliation
@@ -116,7 +127,3 @@ function deims_routines_entity_presave(Drupal\Core\Entity\EntityInterface $entit
 		}
 	}
 }
-
-
-
-
