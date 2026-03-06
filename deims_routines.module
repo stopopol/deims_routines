@@ -64,7 +64,9 @@ function deims_routines_entity_presave(Drupal\Core\Entity\EntityInterface $entit
 			$old_site_name = $original_node->get('field_name')->value;
 
 			if ($old_site_name !== $current_site_name) {
-				perun::push_site_name_list();
+				// Instantiate Perun with HTTP client
+				$perun = new Perun(\Drupal::service('http_client'));
+				$perun->pushSiteNameList();
 			}
 			
 			// Automatically remove unverified GERI (12967), LTER Europe (12974), ILTER (12833), TERN (245), NEON (12966) affiliation
