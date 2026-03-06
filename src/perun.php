@@ -9,6 +9,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use GuzzleHttp\ClientInterface;
 
+// implements MUNI's PERUN https://perun-aai.org/
 class Perun extends ControllerBase {
 
   protected ClientInterface $httpClient;
