@@ -50,7 +50,7 @@ class Perun extends ControllerBase {
   public function pushSiteNameList(): void {
 
     // Test if function is called
-    \Drupal::logger('routines')->notice('A site name changed');
+    \Drupal::logger('deims_routines')->notice('A site name changed');
 
     // Arrays to store the results
     $site_names = [];
@@ -66,21 +66,30 @@ class Perun extends ControllerBase {
     $nodes = Node::loadMultiple($nids);
 
     foreach ($nodes as $node) {
-      if ($node->hasField('field_name') && !$node->get('field_name')->isEmpty()) {
-        $site_names[] = $node->get('field_name')->value;
-      }
+		if ($node->hasField('field_name') && !$node->get('field_name')->isEmpty()) {
+			$site_names[] = $node->get('field_name')->value;
+		}
 
-       if ($node->hasField('field_country') && !$node->get('field_country')->isEmpty()) {
-		$field_def = $node->get('field_country')->getFieldDefinition();
-		$allowed_values = $field_def->getSetting('allowed_values') ?: [];
-		$stored_key = $node->get('field_country')->value;
-		$countries[] = $allowed_values[$stored_key] ?? $stored_key;
-	  }
+		// --- country field (multi-value, list-text) ---
+		if ($node->hasField('field_country') && !$node->get('field_country')->isEmpty()) {
+
+			// Get allowed values mapping key => label
+			$field_def = $node->get('field_country')->getFieldDefinition();
+			$allowed_values = $field_def->getSetting('allowed_values') ?: [];
+
+			// Iterate over all values
+			foreach ($node->get('field_country') as $item) {
+				$key = $item->value;
+				$label = $allowed_values[$key] ?? $key;
+				$countries[] = $label;
+			}
+		}
+
     }
 
     // Debug output
-    \Drupal::logger('routines')->info('Site names: @names', ['@names' => implode(', ', $site_names)]);
-    \Drupal::logger('routines')->info('Countries: @countries', ['@countries' => implode(', ', $countries)]);
+    \Drupal::logger('deims_routines')->info('Site names: @names', ['@names' => implode(', ', $site_names)]);
+    \Drupal::logger('deims_routines')->info('Countries: @countries', ['@countries' => implode(', ', $countries)]);
 
   }
 
