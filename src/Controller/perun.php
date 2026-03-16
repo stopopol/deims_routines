@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\deims_routines;
+namespace Drupal\deims_routines\Controller;
 
 use Drupal\node\NodeInterface;
 use Drupal\node\Entity\Node;
