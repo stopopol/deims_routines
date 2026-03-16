@@ -2,7 +2,7 @@
 
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\paragraphs\Entity\Paragraph;
-use Drupal\deims_routines\perun;
+use Drupal\deims_routines\Controller\perun;
 
 /**
  * Implements hook_form_FORM_ID_alter().
