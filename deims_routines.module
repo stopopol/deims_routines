@@ -16,14 +16,13 @@ function deims_routines_cron() {
   // 7 days = 604800 seconds
   if ($now - $last_run >= 604800) {
 
-    // Your weekly logic here
+    // trigger whatever function is needed
+	// e.g. TERN updates
     \Drupal::logger('deims_routines')->info('Running weekly task.');
 
     // Update last run timestamp
     $state->set('deims_routines.last_run', $now);
 	
-	// trigger whatever function is needed
-	// e.g. TERN updates
   }
 }
 
