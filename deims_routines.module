@@ -5,6 +5,29 @@ use Drupal\paragraphs\Entity\Paragraph;
 use Drupal\deims_routines\Controller\Perun;
 
 /**
+ * Causes the listed function to run once a week
+ */
+function deims_routines_cron() {
+  $state = \Drupal::state();
+
+  $last_run = $state->get('deims_routines.last_run', 0);
+  $now = \Drupal::time()->getRequestTime();
+
+  // 7 days = 604800 seconds
+  if ($now - $last_run >= 604800) {
+
+    // Your weekly logic here
+    \Drupal::logger('deims_routines')->info('Running weekly task.');
+
+    // Update last run timestamp
+    $state->set('deims_routines.last_run', $now);
+	
+	// trigger whatever function is needed
+	// e.g. TERN updates
+  }
+}
+
+/**
  * Implements hook_form_FORM_ID_alter().
  */
 function deims_routines_form_user_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
