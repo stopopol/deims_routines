@@ -3,6 +3,17 @@
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\paragraphs\Entity\Paragraph;
 use Drupal\deims_routines\Controller\Perun;
+use Drupal\Core\Block\BlockPluginInterface;
+
+/*
+ * Custom fix for applying chosen to facet blocks
+ */
+
+function deims_routines_block_view_alter(array &$build, BlockPluginInterface $block) {
+  if (isset($build['#id']) && $build['#id'] === 'networkri') {
+    chosen_attach_library($build);
+  }
+}
 
 /**
  * Causes the listed function to run once a week
