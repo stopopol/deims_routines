@@ -6,11 +6,20 @@ use Drupal\deims_routines\Controller\Perun;
 use Drupal\Core\Block\BlockPluginInterface;
 
 /*
- * Custom fix for applying chosen to facet blocks
+ * Custom fix for applying chosen to facet blocks in search ui
  */
 
 function deims_routines_block_view_alter(array &$build, BlockPluginInterface $block) {
-  if (isset($build['#id']) && $build['#id'] === 'networkri') {
+  $target_ids = [
+    'networkri',
+    'country',
+    'biome',
+    'geobonbiome',
+    'protectionlevel',
+    'sitestatus',
+  ];
+
+  if (isset($build['#id']) && in_array($build['#id'], $target_ids, TRUE)) {
     chosen_attach_library($build);
   }
 }
