@@ -75,6 +75,21 @@ class Perun extends ControllerBase {
 		}
 	  }
 
+	  public function getFormItems(): array {
+		  $url = self::BASE_URL . self::GET_FORM_ITEMS;
+
+		  $parameters = [
+			'group' => self::GROUP_ID,
+		  ];
+
+		  $response = $this->httpClient->request('POST', $url, [
+			'json' => $parameters,
+			'auth' => [$this->username, $this->password],
+		  ]);
+
+		  return json_decode($response->getBody()->getContents(), TRUE);
+	  }
+
 	  // Debug output
 	  \Drupal::logger('routines')->info('Titles: @titles', [
 		'@titles' => implode(', ', $site_titles)
