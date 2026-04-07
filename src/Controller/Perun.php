@@ -9,6 +9,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use GuzzleHttp\ClientInterface;
 
+
 class Perun extends ControllerBase {
 
   protected ClientInterface $httpClient;
@@ -43,6 +44,21 @@ class Perun extends ControllerBase {
       $container->get('http_client')
     );
   }
+  
+  public function getFormItems(): array {
+	$url = self::BASE_URL . self::GET_FORM_ITEMS;
+
+	$parameters = [
+		'group' => self::GROUP_ID,
+	];
+
+	$response = $this->httpClient->request('POST', $url, [
+		'json' => $parameters,
+		'auth' => [$this->username, $this->password],
+	]);
+
+	return json_decode($response->getBody()->getContents(), TRUE);
+  }
 
   /**
    * React when a site name changes — example method
@@ -74,23 +90,31 @@ class Perun extends ControllerBase {
 		  }
 		}
 	  }
+	  
 
-	  public function getFormItems(): array {
-		  $url = self::BASE_URL . self::GET_FORM_ITEMS;
+	  try {
+		$form_items = $this->getFormItems();
 
-		  $parameters = [
-			'group' => self::GROUP_ID,
-		  ];
+		\Drupal::logger('routines')->info('Form items received: @items', [
+		  '@items' => json_encode($form_items, JSON_PRETTY_PRINT),
+		]);
 
-		  $response = $this->httpClient->request('POST', $url, [
-			'json' => $parameters,
-			'auth' => [$this->username, $this->password],
-		  ]);
+	  } catch (\GuzzleHttp\Exception\GuzzleException $e) {
 
-		  return json_decode($response->getBody()->getContents(), TRUE);
+		\Drupal::logger('routines')->error('Perun API request failed (Guzzle): @message', [
+		  '@message' => $e->getMessage(),
+		]);
+
+	  } catch (\Exception $e) {
+
+		\Drupal::logger('routines')->error('Unexpected error in Perun API: @message', [
+		  '@message' => $e->getMessage(),
+		]);
+
 	  }
 
 	  // Debug output
+	  
 	  \Drupal::logger('routines')->info('Titles: @titles', [
 		'@titles' => implode(', ', $site_titles)
 	  ]);
