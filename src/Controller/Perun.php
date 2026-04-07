@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\deims_routines\Controller;
+namespace Drupal\deims_routines;
 
 use Drupal\node\NodeInterface;
 use Drupal\node\Entity\Node;
@@ -9,11 +9,11 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use GuzzleHttp\ClientInterface;
 
-// implements MUNI's PERUN https://perun-aai.org/
 class Perun extends ControllerBase {
 
   protected ClientInterface $httpClient;
 
+  // Class-level constants (cannot reference $config here)
   private const BASE_URL = 'https://perun-api.elter-ri.eu/ba/rpc/json/';
   private const GET_FORM_ITEMS = 'registrarManager/getFormItems';
   private const UPDATE_FORM_ITEMS = 'registrarManager/updateFormItems';
@@ -47,51 +47,45 @@ class Perun extends ControllerBase {
   /**
    * React when a site name changes — example method
    */
-  public function pushSiteNameList(): void {
+	public function pushSiteNameList(): void {
 
-    // Test if function is called
-    \Drupal::logger('deims_routines')->notice('A site name changed');
+	  \Drupal::logger('routines')->notice('A site name changed');
 
-    // Arrays to store the results
-    $site_names = [];
-    $countries = [];
+	  // Initialize arrays
+	  $site_titles = [];
+	  $deimsids = [];
 
-    // Load all node IDs of type 'site'
-    $nids = \Drupal::entityQuery('node')
-      ->condition('type', 'site')
-	  ->accessCheck(FALSE)
-      ->execute();
+	  $nids = \Drupal::entityQuery('node')
+		->condition('type', 'site')
+		->accessCheck(FALSE)
+		->execute();
 
-    // Load the node entities in batch
-    $nodes = Node::loadMultiple($nids);
+	  $nodes = Node::loadMultiple($nids);
 
-    foreach ($nodes as $node) {
-		if ($node->hasField('field_name') && !$node->get('field_name')->isEmpty()) {
-			$site_names[] = $node->get('field_name')->value;
-		}
+	  foreach ($nodes as $node) {
+		if ($node instanceof NodeInterface) {
 
-		// --- country field (multi-value, list-text) ---
-		if ($node->hasField('field_country') && !$node->get('field_country')->isEmpty()) {
+		  // Title
+		  $site_titles[] = $node->getTitle();
 
-			// Get allowed values mapping key => label
-			$field_def = $node->get('field_country')->getFieldDefinition();
-			$allowed_values = $field_def->getSetting('allowed_values') ?: [];
+		  // field_deims_id
+		  if ($node->hasField('field_deims_id') && !$node->get('field_deims_id')->isEmpty()) {
 
-			// Iterate over all values
-			foreach ($node->get('field_country') as $item) {
-				$key = $item->value;
-				$label = $allowed_values[$key] ?? $key;
-				$countries[] = $label;
+			foreach ($node->get('field_deims_id') as $item) {
+			  $deimsids[] = $item->value;
 			}
+		  }
 		}
+	  }
 
-    }
+	  // Debug output
+	  \Drupal::logger('routines')->info('Titles: @titles', [
+		'@titles' => implode(', ', $site_titles)
+	  ]);
 
-    // Debug output
-    \Drupal::logger('deims_routines')->info('Site names: @names', ['@names' => implode(', ', $site_names)]);
-    \Drupal::logger('deims_routines')->info('Countries: @countries', ['@countries' => implode(', ', $countries)]);
-
-  }
+	  \Drupal::logger('routines')->info('DEIMS.IDs: @deimsids', [
+		'@deimsids' => implode(', ', $deimsids)
+	  ]);
+	}
 
 }
-
