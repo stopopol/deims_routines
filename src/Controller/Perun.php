@@ -70,10 +70,7 @@ class Perun extends ControllerBase {
 
 		  // field_deims_id
 		  if ($node->hasField('field_deims_id') && !$node->get('field_deims_id')->isEmpty()) {
-
-			foreach ($node->get('field_deims_id') as $item) {
-			  $deimsids[] = $item->value;
-			}
+			$deimsids[] = $node->get('field_deims_id')->value;
 		  }
 		}
 	  }
