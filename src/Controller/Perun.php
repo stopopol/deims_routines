@@ -15,7 +15,7 @@ class Perun extends ControllerBase {
   protected ClientInterface $httpClient;
 
   // Class-level constants (cannot reference $config here)
-  private const BASE_URL = 'https://perun-api.elter-ri.eu/ba/rpc/json/';
+  private const BASE_URL = 'https://perun-api.aai.elter-ri.eu/ba/rpc/json/';
   private const GET_FORM_ITEMS = 'registrarManager/getFormItems';
   private const UPDATE_FORM_ITEMS = 'registrarManager/updateFormItems';
   private const GROUP_ID = '3';
