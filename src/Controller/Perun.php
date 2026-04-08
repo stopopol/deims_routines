@@ -52,9 +52,13 @@ class Perun extends ControllerBase {
 		'group' => self::GROUP_ID,
 	];
 
+	$config = \Drupal::service('settings')->get('deims_routines');
+    $username = $config['username'] ?? '';
+    $password = $config['password'] ?? '';
+
 	$response = $this->httpClient->request('POST', $url, [
 		'json' => $parameters,
-		'auth' => [$this->username, $this->password],
+		'auth' => [$username, $password],
 	]);
 
 	return json_decode($response->getBody()->getContents(), TRUE);
