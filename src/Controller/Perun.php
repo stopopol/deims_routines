@@ -65,7 +65,7 @@ class Perun extends ControllerBase {
    */
 	public function pushSiteNameList(): void {
 
-	  \Drupal::logger('routines')->notice('A site name changed');
+	  \Drupal::logger('deims_routines')->notice('A site name changed');
 
 	  // Initialize arrays
 	  $site_titles = [];
@@ -95,19 +95,19 @@ class Perun extends ControllerBase {
 	  try {
 		$form_items = $this->getFormItems();
 
-		\Drupal::logger('routines')->info('Form items received: @items', [
+		\Drupal::logger('deims_routines')->info('Form items received: @items', [
 		  '@items' => json_encode($form_items, JSON_PRETTY_PRINT),
 		]);
 
 	  } catch (\GuzzleHttp\Exception\GuzzleException $e) {
 
-		\Drupal::logger('routines')->error('Perun API request failed (Guzzle): @message', [
+		\Drupal::logger('deims_routines')->error('Perun API request failed (Guzzle): @message', [
 		  '@message' => $e->getMessage(),
 		]);
 
 	  } catch (\Exception $e) {
 
-		\Drupal::logger('routines')->error('Unexpected error in Perun API: @message', [
+		\Drupal::logger('deims_routines')->error('Unexpected error in Perun API: @message', [
 		  '@message' => $e->getMessage(),
 		]);
 
@@ -115,11 +115,11 @@ class Perun extends ControllerBase {
 
 	  // Debug output
 	  
-	  \Drupal::logger('routines')->info('Titles: @titles', [
+	  \Drupal::logger('deims_routines')->info('Titles: @titles', [
 		'@titles' => implode(', ', $site_titles)
 	  ]);
 
-	  \Drupal::logger('routines')->info('DEIMS.IDs: @deimsids', [
+	  \Drupal::logger('deims_routines')->info('DEIMS.IDs: @deimsids', [
 		'@deimsids' => implode(', ', $deimsids)
 	  ]);
 	}
