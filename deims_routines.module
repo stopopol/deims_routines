@@ -103,7 +103,7 @@ function deims_routines_entity_presave(Drupal\Core\Entity\EntityInterface $entit
 			// if the site name changes update the list of site names on PERUN
 			$current_site_name = $entity->get('field_name')->value;
 			$original_node = $entity->original ?? NULL;
-			$old_site_name = $original_node->get('field_name')->value;
+			$old_site_name = $original_node ? $original_node->get('field_name')->value : NULL;
 
 			if ($old_site_name !== $current_site_name) {
 				// Instantiate Perun with HTTP client
