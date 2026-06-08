@@ -65,7 +65,7 @@ class Perun extends ControllerBase {
   }
 
   /**
-   * React when a site name changes — example method
+   * React when a site name changes - tbd: trigger only on production
    */
 	public function pushSiteNameList(): void {
 
