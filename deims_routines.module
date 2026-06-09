@@ -170,3 +170,16 @@ function deims_routines_entity_presave(Drupal\Core\Entity\EntityInterface $entit
 		}
 	}
 }
+
+/**
+ * Implements hook_views_data_alter().
+ */
+function deims_routines_views_data_alter(array &$data) {
+  $data['node_field_data']['parameter_count_filter'] = [
+    'title' => t('Parameter count (field_parameters)'),
+    'help' => t('Filter nodes by the number of field_parameters taxonomy term values.'),
+    'filter' => [
+      'id' => 'parameter_count_filter',
+    ],
+  ];
+}
