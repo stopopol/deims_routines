@@ -26,7 +26,7 @@ class ParameterCountFilter extends FilterPluginBase {
     $options = parent::defineOptions();
     $options['operator'] = ['default' => 'gt'];
     $options['value'] = ['default' => 5];
-    $options['only_top_level_terms'] = ['default' => FALSE];
+    $options['only_bottom_level_terms'] = ['default' => FALSE];
     return $options;
   }
 
@@ -64,11 +64,11 @@ class ParameterCountFilter extends FilterPluginBase {
       '#step'          => 1,
     ];
 
-    $form['only_top_level_terms'] = [
+    $form['only_bottom_level_terms'] = [
       '#type'          => 'checkbox',
-      '#title'         => $this->t('Only count top-level terms (no parent)'),
+      '#title'         => $this->t('Only count child-level terms (no parent)'),
       '#description'   => $this->t('When enabled, only taxonomy terms without a parent term are counted.'),
-      '#default_value' => $this->options['only_top_level_terms'],
+      '#default_value' => $this->options['only_bottom_level_terms'],
     ];
   }
 
@@ -93,11 +93,11 @@ class ParameterCountFilter extends FilterPluginBase {
       '#step'          => 1,
     ];
 
-    $form['only_top_level_terms'] = [
+    $form['only_bottom_level_terms'] = [
       '#type'          => 'checkbox',
       '#title'         => $this->t('Only count top-level terms (no parent)'),
       '#description'   => $this->t('When enabled, only taxonomy terms without a parent term are counted.'),
-      '#default_value' => $this->options['only_top_level_terms'],
+      '#default_value' => $this->options['only_bottom_level_terms'],
     ];
   }
 
@@ -119,7 +119,7 @@ class ParameterCountFilter extends FilterPluginBase {
 
     // When the option is enabled, restrict to terms that have no parent
     // (i.e. parent_target_id = 0 in taxonomy_term__parent).
-    if (!empty($this->options['only_top_level_terms'])) {
+    if (!empty($this->options['only_bottom_level_terms'])) {
       $subquery->join(
         'taxonomy_term__parent',
         'ttp',
