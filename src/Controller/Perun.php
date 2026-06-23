@@ -122,9 +122,8 @@ class Perun extends ControllerBase {
         if ($item['shortname'] === self::DEIMS_SITES_SHORTNAME) {
           $new_options = $this->buildDeimsSitesOptions();
           $item['i18n']['en']['options'] = $new_options;
-          \Drupal::logger('deims_routines')->info('Updated DEIMS_sites options: @opts', [
-            '@opts' => $new_options,
-          ]);
+          // for logging
+          // \Drupal::logger('deims_routines')->info('Updated DEIMS_sites options: @opts', ['@opts' => $new_options, ]);
           $updated = TRUE;
           break;
         }
