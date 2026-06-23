@@ -59,29 +59,37 @@ class Perun extends ControllerBase {
   /**
    * Sends the full (modified) form items array back to Perun.
    */
-	public function updateFormItems(array $items): int {
-	  $response = $this->httpClient->request('POST', self::BASE_URL . self::UPDATE_FORM_ITEMS, [
-		'json' => [
-		  'group' => self::GROUP_ID,
-		  'items' => $items,
-		],
-		'auth' => [$this->username, $this->password],
-	  ]);
-	  return (int) json_decode($response->getBody()->getContents(), TRUE);
-	}
+  public function updateFormItems(array $items): int {
+    $response = $this->httpClient->request('POST', self::BASE_URL . self::UPDATE_FORM_ITEMS, [
+      'json' => [
+        'group' => self::GROUP_ID,
+        'items' => $items,
+      ],
+      'auth' => [$this->username, $this->password],
+    ]);
+    return (int) json_decode($response->getBody()->getContents(), TRUE);
+  }
 
   /**
    * Builds the pipe-separated options string for the DEIMS_sites combobox
-   * from current DEIMS.ID nodes: "{uuid}#{Title}|{uuid}#{Title}|..."
+   * from current active DEIMS.ID nodes: "{uuid}#{Title}|{uuid}#{Title}|..."
+   * Excludes sites with status tid 54180 (inactive/closed), but includes
+   * sites where field_status is not set.
    */
   private function buildDeimsSitesOptions(): string {
     $options = [];
 
-    $nids = \Drupal::entityQuery('node')
+    $query = \Drupal::entityQuery('node')
       ->condition('type', 'site')
-      ->accessCheck(FALSE)
-      ->execute();
+      ->accessCheck(FALSE);
 
+    $exclude_closed = $query->orConditionGroup()
+      ->condition('field_status.entity:taxonomy_term.tid', 54180, '!=')
+      ->condition('field_status', NULL, 'IS NULL');
+
+    $query->condition($exclude_closed);
+
+    $nids = $query->execute();
     $nodes = Node::loadMultiple($nids);
 
     foreach ($nodes as $node) {
@@ -130,11 +138,16 @@ class Perun extends ControllerBase {
 
       // 3. Push the full modified array back to Perun
       $result = $this->updateFormItems($form_items);
-	  \Drupal::logger('deims_routines')->info('updateFormItems response: @resp', [
-	    '@resp' => $result,
-		// currently i receive the result code 12 
-		// is that the success code?
-	  ]);
+      if ($result === 12) {
+        \Drupal::logger('deims_routines')->info('Perun DEIMS_sites updated successfully (@count items).', [
+          '@count' => $result,
+        ]);
+      }
+      else {
+        \Drupal::logger('deims_routines')->warning('Perun updateFormItems returned unexpected value: @resp', [
+          '@resp' => $result,
+        ]);
+      }
 
     } catch (\GuzzleHttp\Exception\GuzzleException $e) {
       \Drupal::logger('deims_routines')->error('Perun API request failed (Guzzle): @message', [
