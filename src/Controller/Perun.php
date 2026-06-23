@@ -1,7 +1,5 @@
 <?php
-
 namespace Drupal\deims_routines\Controller;
-
 use Drupal\node\NodeInterface;
 use Drupal\node\Entity\Node;
 use Drupal\Core\Controller\ControllerBase;
@@ -9,123 +7,143 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use GuzzleHttp\ClientInterface;
 
-
 class Perun extends ControllerBase {
 
   protected ClientInterface $httpClient;
 
-  // Class-level constants (cannot reference $config here)
   private const BASE_URL = 'https://perun-api.aai.elter-ri.eu/ba/rpc/json/';
   private const GET_FORM_ITEMS = 'registrarManager/getFormItems';
   private const UPDATE_FORM_ITEMS = 'registrarManager/updateFormItems';
   private const GROUP_ID = 3;
+  private const DEIMS_SITES_SHORTNAME = 'DEIMS_sites';
 
-  // Runtime properties for credentials
   private string $username;
   private string $password;
 
-  /**
-   * Constructor — inject HTTP client and load credentials from settings.php
-   */
   public function __construct(ClientInterface $http_client) {
     $this->httpClient = $http_client;
-
-    // Load credentials from settings.php
     $config = \Drupal::service('settings')->get('deims_routines');
     $this->username = $config['username'] ?? '';
     $this->password = $config['password'] ?? '';
   }
 
-  /**
-   * Drupal service container creation
-   */
   public static function create(ContainerInterface $container) {
     return new static(
       $container->get('http_client')
     );
   }
-  
+
+  /**
+   * Fetches all form items for the group from Perun.
+   */
   public function getFormItems(): array {
-	$url = self::BASE_URL . self::GET_FORM_ITEMS;
-
-	$parameters = [
-		'group' => self::GROUP_ID,
-	];
-
-	$config = \Drupal::service('settings')->get('deims_routines');
-    $username = $config['username'] ?? '';
-    $password = $config['password'] ?? '';
-
-	$response = $this->httpClient->request('POST', $url, [
-		'json' => $parameters,
-		'auth' => [$username, $password],
-	]);
-
-	return json_decode($response->getBody()->getContents(), TRUE);
+    $response = $this->httpClient->request('POST', self::BASE_URL . self::GET_FORM_ITEMS, [
+      'json' => ['group' => self::GROUP_ID],
+      'auth' => [$this->username, $this->password],
+    ]);
+    return json_decode($response->getBody()->getContents(), TRUE);
   }
 
   /**
-   * React when a site name changes - tbd: trigger only on production
+   * Finds a single form item by its shortname.
    */
-	public function pushSiteNameList(): void {
+  public function getFormItemByShortname(array $form_items, string $shortname): ?array {
+    foreach ($form_items as $item) {
+      if ($item['shortname'] === $shortname) {
+        return $item;
+      }
+    }
+    return NULL;
+  }
 
-	  \Drupal::logger('deims_routines')->notice('A site name changed');
-
-	  // Initialize arrays
-	  $site_titles = [];
-	  $deimsids = [];
-
-	  $nids = \Drupal::entityQuery('node')
-		->condition('type', 'site')
-		->accessCheck(FALSE)
-		->execute();
-
-	  $nodes = Node::loadMultiple($nids);
-
-	  foreach ($nodes as $node) {
-		if ($node instanceof NodeInterface) {
-
-		  // Title
-		  $site_titles[] = $node->getTitle();
-
-		  // field_deims_id
-		  if ($node->hasField('field_deims_id') && !$node->get('field_deims_id')->isEmpty()) {
-			$deimsids[] = $node->get('field_deims_id')->value;
-		  }
-		}
-	  }
-	  
-
-	  try {
-		$form_items = $this->getFormItems();
-
-		\Drupal::logger('deims_routines')->info('Form items received: @items', [
-		  '@items' => json_encode($form_items, JSON_PRETTY_PRINT),
-		]);
-
-	  } catch (\GuzzleHttp\Exception\GuzzleException $e) {
-
-		\Drupal::logger('deims_routines')->error('Perun API request failed (Guzzle): @message', [
-		  '@message' => $e->getMessage(),
-		]);
-
-	  } catch (\Exception $e) {
-
-		\Drupal::logger('deims_routines')->error('Unexpected error in Perun API: @message', [
-		  '@message' => $e->getMessage(),
-		]);
-
-	  }
-
-	  // Debug output
-	  
-	  \Drupal::logger('deims_routines')->info('Titles: @titles', [
-		'@titles' => implode(', ', $site_titles)
+  /**
+   * Sends the full (modified) form items array back to Perun.
+   */
+	public function updateFormItems(array $items): int {
+	  $response = $this->httpClient->request('POST', self::BASE_URL . self::UPDATE_FORM_ITEMS, [
+		'json' => [
+		  'group' => self::GROUP_ID,
+		  'items' => $items,
+		],
+		'auth' => [$this->username, $this->password],
 	  ]);
-
-	  \Drupal::logger('deims_routines')->info('DEIMS.IDs: @deimsids', [
-		'@deimsids' => implode(', ', $deimsids)
-	  ]);
+	  return (int) json_decode($response->getBody()->getContents(), TRUE);
 	}
 
+  /**
+   * Builds the pipe-separated options string for the DEIMS_sites combobox
+   * from current DEIMS.ID nodes: "{uuid}#{Title}|{uuid}#{Title}|..."
+   */
+  private function buildDeimsSitesOptions(): string {
+    $options = [];
+
+    $nids = \Drupal::entityQuery('node')
+      ->condition('type', 'site')
+      ->accessCheck(FALSE)
+      ->execute();
+
+    $nodes = Node::loadMultiple($nids);
+
+    foreach ($nodes as $node) {
+      if (!($node instanceof NodeInterface)) {
+        continue;
+      }
+      if ($node->hasField('field_deims_id') && !$node->get('field_deims_id')->isEmpty()) {
+        $uuid = $node->get('field_deims_id')->value;
+        $title = $node->getTitle();
+        $options[] = $uuid . '#' . $title;
+      }
+    }
+
+    return implode('|', $options);
+  }
+
+  /**
+   * Reacts when a site name changes — updates the DEIMS_sites combobox in Perun.
+   */
+  public function pushSiteNameList(): void {
+    \Drupal::logger('deims_routines')->notice('pushSiteNameList to PERUN triggered');
+
+    try {
+      // 1. Fetch current form items
+      $form_items = $this->getFormItems();
+
+      // 2. Find the DEIMS_sites item and update its options string
+      $updated = FALSE;
+      foreach ($form_items as &$item) {
+        if ($item['shortname'] === self::DEIMS_SITES_SHORTNAME) {
+          $new_options = $this->buildDeimsSitesOptions();
+          $item['i18n']['en']['options'] = $new_options;
+          \Drupal::logger('deims_routines')->info('Updated DEIMS_sites options: @opts', [
+            '@opts' => $new_options,
+          ]);
+          $updated = TRUE;
+          break;
+        }
+      }
+      unset($item); // always unset after foreach by reference
+
+      if (!$updated) {
+        \Drupal::logger('deims_routines')->warning('DEIMS_sites form item not found — nothing updated');
+        return;
+      }
+
+      // 3. Push the full modified array back to Perun
+      $result = $this->updateFormItems($form_items);
+	  \Drupal::logger('deims_routines')->info('updateFormItems response: @resp', [
+	    '@resp' => $result,
+		// currently i receive the result code 12 
+		// is that the success code?
+	  ]);
+
+    } catch (\GuzzleHttp\Exception\GuzzleException $e) {
+      \Drupal::logger('deims_routines')->error('Perun API request failed (Guzzle): @message', [
+        '@message' => $e->getMessage(),
+      ]);
+    } catch (\Exception $e) {
+      \Drupal::logger('deims_routines')->error('Unexpected error in Perun API: @message', [
+        '@message' => $e->getMessage(),
+      ]);
+    }
+  }
 }
