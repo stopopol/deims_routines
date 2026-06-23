@@ -107,10 +107,11 @@ class Perun extends ControllerBase {
   }
 
   /**
-   * Reacts when a site name changes — updates the DEIMS_sites combobox in Perun.
+   * Reacts when a site name changes — updates the DEIMS_sites combobox in PERUN
    */
   public function pushSiteNameList(): void {
-    \Drupal::logger('deims_routines')->notice('pushSiteNameList to PERUN triggered');
+    // for logging
+    // \Drupal::logger('deims_routines')->notice('pushSiteNameList to PERUN triggered');
 
     try {
       // 1. Fetch current form items
