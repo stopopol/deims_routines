@@ -78,20 +78,24 @@ class Perun extends ControllerBase {
    */
   private function buildDeimsSitesOptions(): string {
     $options = [];
-
+  
     $query = \Drupal::entityQuery('node')
       ->condition('type', 'site')
       ->accessCheck(FALSE);
-
+  
+    // Exclude closed/inactive sites, but include sites with no status set
     $exclude_closed = $query->orConditionGroup()
       ->condition('field_status.entity:taxonomy_term.tid', 54180, '!=')
       ->condition('field_status', NULL, 'IS NULL');
-
     $query->condition($exclude_closed);
-
+  
+    // Only eLTER network sites with verified affiliation
+    $query->condition('field_affiliation.entity:paragraph.field_network.entity:node.uuid', '4742ffca-65ac-4aae-815f-83738500a1fc');
+    $query->condition('field_affiliation.entity:paragraph.field_network_verified', TRUE);
+  
     $nids = $query->execute();
     $nodes = Node::loadMultiple($nids);
-
+  
     foreach ($nodes as $node) {
       if (!($node instanceof NodeInterface)) {
         continue;
@@ -102,7 +106,7 @@ class Perun extends ControllerBase {
         $options[] = $uuid . '#' . $title;
       }
     }
-
+  
     return implode('|', $options);
   }
 
