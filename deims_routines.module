@@ -85,7 +85,7 @@ function deims_routines_entity_presave(Drupal\Core\Entity\EntityInterface $entit
 		// routines for sites
 		if ($current_content_type == "site") {
 			
-			// save UUID tp DEIMS.ID field 
+			// save UUID to DEIMS.ID field 
 			if ($entity->get('field_deims_id')->isEmpty()) {
 				$entity->field_deims_id->value = $entity->uuid();
 			}
