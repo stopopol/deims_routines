@@ -45,18 +45,6 @@ class Perun extends ControllerBase {
   }
 
   /**
-   * Finds a single form item by its shortname.
-   */
-  public function getFormItemByShortname(array $form_items, string $shortname): ?array {
-    foreach ($form_items as $item) {
-      if ($item['shortname'] === $shortname) {
-        return $item;
-      }
-    }
-    return NULL;
-  }
-
-  /**
    * Sends the full (modified) form items array back to Perun.
    */
   public function updateFormItems(array $items): int {
