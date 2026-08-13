@@ -130,7 +130,7 @@ class Perun extends ControllerBase {
 
       // 3. Push the full modified array back to Perun
       $result = $this->updateFormItems($form_items);
-      if ($result < 0) {
+      if ($result > 0) {
         \Drupal::logger('deims_routines')->info('DEIMS Site List successfully updated on PERUN.');
       }
       else {
