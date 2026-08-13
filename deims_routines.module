@@ -47,6 +47,29 @@ function deims_routines_cron() {
 }
 
 /**
+ * Returns the network node IDs (field_network target_id) referenced by
+ * the affiliation paragraphs on the given entity.
+ */
+function deims_routines_get_affiliation_network_ids(\Drupal\Core\Entity\EntityInterface $entity): array {
+  $network_ids = [];
+
+  if (!$entity->hasField('field_affiliation')) {
+    return $network_ids;
+  }
+
+  foreach ($entity->get('field_affiliation') as $item) {
+    if ($item->entity instanceof Paragraph) {
+      $paragraph = $item->entity;
+      if (!$paragraph->get('field_network')->isEmpty()) {
+        $network_ids[] = (int) $paragraph->get('field_network')->target_id;
+      }
+    }
+  }
+
+  return $network_ids;
+}
+
+/**
  * Implements hook_form_FORM_ID_alter().
  */
 function deims_routines_form_user_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
@@ -97,20 +120,29 @@ function deims_routines_entity_presave(Drupal\Core\Entity\EntityInterface $entit
 				}
 			}
 			
-			// if the site name changes update the list of site names on PERUN
+			// Trigger a PERUN update on a site name change, or when an eLTER affiliation (nid = 12974) is added to or removed from field_affiliation.
 			$current_site_name = $entity->get('field_name')->value;
 			$original_node = $entity->original ?? NULL;
 			$old_site_name = $original_node ? $original_node->get('field_name')->value : NULL;
-
+			
+			$name_changed = $original_node === NULL || $old_site_name !== $current_site_name;
+			
+			$elter_network_nid = 12974; // eLTER
+			$current_network_ids = deims_routines_get_affiliation_network_ids($entity);
+			$original_network_ids = $original_node ? deims_routines_get_affiliation_network_ids($original_node) : [];
+			$elter_affiliation_changed = in_array($elter_network_nid, $current_network_ids, TRUE)
+			  !== in_array($elter_network_nid, $original_network_ids, TRUE);
+			
 			// trigger the PERUN update only on the production but not the training instance
 			$host = \Drupal::request()->getHost();
 			if (in_array($host, ['deims.org', 'www.deims.org'])) {
-			  if ($original_node === NULL || $old_site_name !== $current_site_name) {
+			  if ($name_changed || $elter_affiliation_changed) {
 			    $perun = new Perun(\Drupal::service('http_client'));
 			    $perun->pushSiteNameList();
 			  }
 			}
-			
+
+
 			// Automatically remove unverified GERI (12967), LTER Europe (12974), ILTER (12833), TERN (245), NEON (12966) affiliation
 			// and print status message
 			$field_affiliation = $entity->get('field_affiliation');
