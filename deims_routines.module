@@ -49,8 +49,11 @@ function deims_routines_cron() {
 /**
  * Returns the network node IDs (field_network target_id) referenced by
  * the affiliation paragraphs on the given entity.
+ *
+ * @param bool $verified_only
+ *   If TRUE, only include networks where field_network_verified is TRUE.
  */
-function deims_routines_get_affiliation_network_ids(\Drupal\Core\Entity\EntityInterface $entity): array {
+function deims_routines_get_affiliation_network_ids(\Drupal\Core\Entity\EntityInterface $entity, bool $verified_only = FALSE): array {
   $network_ids = [];
 
   if (!$entity->hasField('field_affiliation')) {
@@ -60,9 +63,15 @@ function deims_routines_get_affiliation_network_ids(\Drupal\Core\Entity\EntityIn
   foreach ($entity->get('field_affiliation') as $item) {
     if ($item->entity instanceof Paragraph) {
       $paragraph = $item->entity;
-      if (!$paragraph->get('field_network')->isEmpty()) {
-        $network_ids[] = (int) $paragraph->get('field_network')->target_id;
+      if ($paragraph->get('field_network')->isEmpty()) {
+        continue;
       }
+      if ($verified_only) {
+        if ($paragraph->get('field_network_verified')->isEmpty() || !$paragraph->get('field_network_verified')->value) {
+          continue;
+        }
+      }
+      $network_ids[] = (int) $paragraph->get('field_network')->target_id;
     }
   }
 
@@ -120,7 +129,9 @@ function deims_routines_entity_presave(Drupal\Core\Entity\EntityInterface $entit
 				}
 			}
 			
-			// Trigger a PERUN update on a site name change, or when an eLTER affiliation (nid = 12974) is added to or removed from field_affiliation.
+			// Trigger a PERUN update on a site name change, or when a *verified*
+			// eLTER (nid 12974) affiliation is added to or removed from
+			// field_affiliation.
 			$current_site_name = $entity->get('field_name')->value;
 			$original_node = $entity->original ?? NULL;
 			$old_site_name = $original_node ? $original_node->get('field_name')->value : NULL;
@@ -128,10 +139,10 @@ function deims_routines_entity_presave(Drupal\Core\Entity\EntityInterface $entit
 			$name_changed = $original_node === NULL || $old_site_name !== $current_site_name;
 			
 			$elter_network_nid = 12974; // eLTER
-			$current_network_ids = deims_routines_get_affiliation_network_ids($entity);
-			$original_network_ids = $original_node ? deims_routines_get_affiliation_network_ids($original_node) : [];
-			$elter_affiliation_changed = in_array($elter_network_nid, $current_network_ids, TRUE)
-			  !== in_array($elter_network_nid, $original_network_ids, TRUE);
+			$current_verified_network_ids = deims_routines_get_affiliation_network_ids($entity, TRUE);
+			$original_verified_network_ids = $original_node ? deims_routines_get_affiliation_network_ids($original_node, TRUE) : [];
+			$elter_affiliation_changed = in_array($elter_network_nid, $current_verified_network_ids, TRUE)
+			  !== in_array($elter_network_nid, $original_verified_network_ids, TRUE);
 			
 			// trigger the PERUN update only on the production but not the training instance
 			$host = \Drupal::request()->getHost();
