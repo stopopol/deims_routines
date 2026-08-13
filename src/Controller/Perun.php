@@ -14,7 +14,7 @@ class Perun extends ControllerBase {
   private const BASE_URL = 'https://perun-api.aai.elter-ri.eu/ba/rpc/json/';
   private const GET_FORM_ITEMS = 'registrarManager/getFormItems';
   private const UPDATE_FORM_ITEMS = 'registrarManager/updateFormItems';
-  private const GROUP_ID = 3;
+  private const GROUP_ID = 36;
   private const DEIMS_SITES_SHORTNAME = 'DEIMS_sites';
 
   private string $username;
