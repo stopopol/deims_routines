@@ -1,6 +1,6 @@
-name: DEIMS-SDR Routines
-description: Provides routine functions to DEIMS-SDR
-package: DEIMS-SDR
+name: DEIMS Routines
+description: Provides routine functions to DEIMS
+package: DEIMS
 type: module
 version: 8.x-1.0
 core_version_requirement: ^10 || ^11
